@@ -1,0 +1,10 @@
+services:
+  datnte:
+    image: davojan/dante-pam
+    container_name: dante
+    ports:
+      - "1080:1080"
+    volumes:
+      - "./sockd.conf:/etc/sockd.conf:ro"
+      - "./sockd.passwd:/etc/danted/sockd.passwd"
+
