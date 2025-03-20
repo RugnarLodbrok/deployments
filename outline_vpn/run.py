@@ -63,11 +63,13 @@ class UserConfig(BaseModel):
             if config.PUBLIC_IP:
                 return config.PUBLIC_IP
             for url in config.HOSTNAME_RESOLVERS:
+                print(f'resolving ip using {url}')
                 try:
-                    r = requests.get(url, timeout=10)
+                    r = requests.get(url, timeout=(2, 5))
                 except requests.ConnectionError:
-                    continue
+                    print('failed')
                 if r.ok:
+                    print('done')
                     return r.text.strip()
 
                 # return _shell('fetch', '--ipv4', url)  # todo: use requests?
@@ -141,7 +143,7 @@ def checks():
 
 
 def check_firewall(uc: UserConfig, config: Config):
-    r = requests.get(uc.public_api_url(config) + '/access-keys', cert=uc.cert_file, timeout=5)
+    r = requests.get(uc.public_api_url(config) + '/access-keys', cert=uc.cert_file, timeout=(2, 5))
     r.raise_for_status()
 
 
@@ -165,10 +167,10 @@ def main():
         print(f'state dir created: {config.state_dir}')
 
     user_config_file = config.state_dir / USER_CONFIG_FILE
-    try:
+    if user_config_file.exists():
         uc = UserConfig.load(user_config_file)
         print(f'config loaded from {user_config_file}:')
-    except FileNotFoundError:
+    else:
         uc = UserConfig.generate(config)
         uc.generate_keys()
         uc.save(user_config_file)

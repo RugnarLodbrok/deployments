@@ -7,4 +7,3 @@ services:
     volumes:
       - "./sockd.conf:/etc/sockd.conf:ro"
       - "./sockd.passwd:/etc/danted/sockd.passwd"
-
