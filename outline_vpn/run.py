@@ -12,7 +12,7 @@ import yaml
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings
 
-USER_CONFIG_FILE= Path('user_config.yml')
+USER_CONFIG_FILE = Path('user_config.yml')
 
 
 class Config(BaseSettings):
@@ -143,7 +143,9 @@ def checks():
 
 
 def check_firewall(uc: UserConfig, config: Config):
-    r = requests.get(uc.public_api_url(config) + '/access-keys', cert=str(uc.cert_file), timeout=(2, 5))
+    url = uc.public_api_url(config) + '/access-keys'
+    print(f'curl --cacert {uc.cert_file} {url}')
+    r = requests.get(url, cert=str(uc.cert_file), timeout=(2, 5))
     r.raise_for_status()
 
 
@@ -160,14 +162,6 @@ def main():
 
     checks()
 
-    # if not config.state_dir.exists():
-    #     config.APP_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
-    #     subprocess.check_call(['chmod', 'u+s,ug+rwx,o-rwx', config.APP_DIR])
-    #     config.state_dir.mkdir(exist_ok=True)
-    #     subprocess.check_call(['chmod', 'ug+rwx,g+s,o-rwx', config.state_dir])
-    #     print(f'state dir created: {config.state_dir}')
-
-    # user_config_file = config.state_dir / USER_CONFIG_FILE
     if USER_CONFIG_FILE.exists():
         uc = UserConfig.load(USER_CONFIG_FILE)
         print(f'config loaded from {USER_CONFIG_FILE}:')
