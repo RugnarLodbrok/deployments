@@ -12,7 +12,7 @@ import yaml
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings
 
-USER_CONFIG_FILE: str = 'user_config.yml'
+USER_CONFIG_FILE= Path('user_config.yml')
 
 
 class Config(BaseSettings):
@@ -160,22 +160,22 @@ def main():
 
     checks()
 
-    if not config.state_dir.exists():
-        config.APP_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
-        subprocess.check_call(['chmod', 'u+s,ug+rwx,o-rwx', config.APP_DIR])
-        config.state_dir.mkdir(exist_ok=True)
-        subprocess.check_call(['chmod', 'ug+rwx,g+s,o-rwx', config.state_dir])
-        print(f'state dir created: {config.state_dir}')
+    # if not config.state_dir.exists():
+    #     config.APP_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+    #     subprocess.check_call(['chmod', 'u+s,ug+rwx,o-rwx', config.APP_DIR])
+    #     config.state_dir.mkdir(exist_ok=True)
+    #     subprocess.check_call(['chmod', 'ug+rwx,g+s,o-rwx', config.state_dir])
+    #     print(f'state dir created: {config.state_dir}')
 
-    user_config_file = config.state_dir / USER_CONFIG_FILE
-    if user_config_file.exists():
-        uc = UserConfig.load(user_config_file)
-        print(f'config loaded from {user_config_file}:')
+    # user_config_file = config.state_dir / USER_CONFIG_FILE
+    if USER_CONFIG_FILE.exists():
+        uc = UserConfig.load(USER_CONFIG_FILE)
+        print(f'config loaded from {USER_CONFIG_FILE}:')
     else:
         uc = UserConfig.generate(config)
         uc.generate_keys()
-        uc.save(user_config_file)
-        print(f'config created at {user_config_file}:')
+        uc.save(USER_CONFIG_FILE)
+        print(f'config created at {USER_CONFIG_FILE}:')
     print(uc.format())
 
     print(json.dumps(uc.outline_json(config), indent=4))

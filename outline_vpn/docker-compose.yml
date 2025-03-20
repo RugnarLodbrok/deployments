@@ -6,10 +6,11 @@ services:
       driver: "local"
     network_mode: host
     volumes:
-      - ${STATE_DIR}:${STATE_DIR}
+      - ./shadowbox-selfsigned.cert:/opt/outline/persistent-state/shadowbox-selfsigned.cert
+      - ./shadowbox-selfsigned.key:/opt/outline/persistent-state/shadowbox-selfsigned.key
     environment:
       SB_API_PORT: 9001
       SB_API_PREFIX: ${SB_API_PREFIX}
-      SB_CERTIFICATE_FILE: ${STATE_DIR}/shadowbox-selfsigned.cert
-      SB_PRIVATE_KEY_FILE: ${STATE_DIR}/shadowbox-selfsigned.key
+      SB_CERTIFICATE_FILE: /opt/outline/persistent-state/shadowbox-selfsigned.cert
+      SB_PRIVATE_KEY_FILE: /opt/outline/persistent-state/shadowbox-selfsigned.key
       SB_METRICS_URL: ${SB_METRICS_URL:-}
