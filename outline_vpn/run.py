@@ -177,10 +177,10 @@ def main():
         print(f'config created at {user_config_file}:')
     print(uc.format())
 
-    check_firewall(uc, config)
     print(json.dumps(uc.outline_json(config), indent=4))
 
     docker_compose_up(config, uc)
+    check_firewall(uc, config)
 
 
 if __name__ == '__main__':
