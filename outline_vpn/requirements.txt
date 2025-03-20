@@ -1,0 +1,5 @@
+typer
+requests
+pyyaml
+pydantic
+pydantic_settings
