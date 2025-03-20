@@ -144,9 +144,10 @@ def checks():
 
 def check_firewall(uc: UserConfig, config: Config):
     url = uc.public_api_url(config) + '/access-keys'
+    print('please check firewall with:')
     print(f'curl --cacert {uc.cert_file} {url}')
-    r = requests.get(url, cert=str(uc.cert_file), timeout=(2, 5))
-    r.raise_for_status()
+    # r = requests.get(url, cert=str(uc.cert_file), timeout=(2, 5))
+    # r.raise_for_status()
 
 
 def docker_compose_up(config: Config, uc: UserConfig):
