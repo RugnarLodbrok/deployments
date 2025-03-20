@@ -143,7 +143,7 @@ def checks():
 
 
 def check_firewall(uc: UserConfig, config: Config):
-    r = requests.get(uc.public_api_url(config) + '/access-keys', cert=uc.cert_file, timeout=(2, 5))
+    r = requests.get(uc.public_api_url(config) + '/access-keys', cert=str(uc.cert_file), timeout=(2, 5))
     r.raise_for_status()
 
 
