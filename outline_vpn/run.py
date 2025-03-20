@@ -150,6 +150,7 @@ def check_firewall(uc: UserConfig, config: Config):
 def docker_compose_up(config: Config, uc: UserConfig):
     os.environ['STATE_DIR'] = str(config.state_dir)
     os.environ['SB_API_PREFIX'] = uc.api_prefix
+    Path('.env').write_text(f'SB_API_PREFIX={uc.api_prefix}\nSTATE_DIR={config.state_dir}\n')
     os.system('docker-compose up -d')
     print('docker compose up -d ...  # check with docker ps')
 
