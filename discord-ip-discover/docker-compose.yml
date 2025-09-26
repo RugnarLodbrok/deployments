@@ -1,0 +1,12 @@
+services:
+  discord-voice-discover:
+    build: .
+    container_name: discord-voice-discover
+    command:
+      - bash
+      - -c
+      - "dpush discord-voice-ips &&  discover-voice.sh russia && dpop && cp discord-voice-ips/regions/russia/russia-voice-resolved /root/mnt/"
+    volumes:
+      - .:/root/mnt
+#      - '/mnt/secondary-pool:/mnt/secondary-pool:ro'
+#      - '/mnt/main-pool/share:/mnt/main-pool/share:ro'
