@@ -5,8 +5,10 @@ ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /root
 
 RUN apt update && \
-    apt install git parallel dnsutils
+    apt install -y  \
+    git parallel dnsutils
 
-COPY discover-voice.sh .
+RUN git clone https://github.com/GhostRooter0953/discord-voice-ips.git
 
-CMD ["bash", "discover-voice.sh"]
+COPY run.sh .
+CMD ["bash", "run.sh"]
