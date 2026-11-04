@@ -10,7 +10,7 @@ readonly TLS_DOMAIN=github.com
 readonly PORT=443
 
 usage() {
-    printf 'Usage: bash user.sh <name>\n' >&2
+    printf 'Usage: bash user.sh <name> | bash user.sh --revoke <name>\n' >&2
     exit 1
 }
 
@@ -82,23 +82,76 @@ EOF
     fi
 }
 
-add_user() {
-    local name=$1 secret
-    if grep -qE "^${name}[[:space:]]*=" "$CONFIG"; then
-        printf 'User %s already exists.\n' "$name" >&2
-        exit 1
-    fi
-    secret=$(openssl rand -hex 16)
-    printf '%s = "%s"\n' "$name" "$secret" >> "$CONFIG"
-    local domain_hex
-    domain_hex=$(printf '%s' "$TLS_DOMAIN" | od -An -tx1 | tr -d ' \n')
-    printf 'Link for %s:\ntg://proxy?server=%s&port=%s&secret=ee%s%s\n' "$name" "$2" "$PORT" "$secret" "$domain_hex"
+read_secret() {
+    local name=$1 line section= pattern="^[[:space:]]*${name}[[:space:]]*=[[:space:]]*\"([0-9a-f]{32})\"[[:space:]]*$"
+    local section_pattern='^\[([^]]+)\]$'
+    while IFS= read -r line || [[ -n $line ]]; do
+        if [[ $line =~ $section_pattern ]]; then
+            section=${BASH_REMATCH[1]}
+        elif [[ $section == access.users && $line =~ $pattern ]]; then
+            printf '%s' "${BASH_REMATCH[1]}"
+            return 0
+        fi
+    done < "$CONFIG"
+    return 1
 }
 
-[[ $# == 1 ]] || usage
-[[ $1 =~ ^[A-Za-z0-9_-]+$ && ${#1} -le 64 ]] || usage
-command -v openssl >/dev/null || { printf 'OpenSSL is required.\n' >&2; exit 1; }
-public_host=$(read_public_host)
-initialize
-add_user "$1" "$public_host"
-printf 'Apply the configuration: docker compose up -d --force-recreate\n'
+show_link() {
+    local name=$1 host=$2 secret=$3 domain_hex
+    domain_hex=$(printf '%s' "$TLS_DOMAIN" | od -An -tx1 | tr -d ' \n')
+    printf 'Link for %s:\ntg://proxy?server=%s&port=%s&secret=ee%s%s\n' "$name" "$host" "$PORT" "$secret" "$domain_hex"
+    printf 'To revoke access: bash user.sh --revoke %s\n' "$name"
+}
+
+add_user() {
+    local name=$1 host=$2 secret
+    if secret=$(read_secret "$name"); then
+        printf 'User %s already exists.\n' "$name"
+    else
+        command -v openssl >/dev/null || { printf 'OpenSSL is required.\n' >&2; return 1; }
+        secret=$(openssl rand -hex 16)
+        printf '%s = "%s"\n' "$name" "$secret" >> "$CONFIG"
+        printf 'Apply the configuration: docker compose up -d --force-recreate\n'
+    fi
+    show_link "$name" "$host" "$secret"
+}
+
+revoke_user() {
+    local name=$1 temp
+    if [[ ! -f $CONFIG ]] || ! read_secret "$name" >/dev/null; then
+        printf 'User %s does not exist.\n' "$name" >&2
+        return 1
+    fi
+    temp=$(mktemp config/.users.XXXXXXXX)
+    if ! awk -v name="$name" '
+        /^\[[^]]+\]$/ { section = $0 }
+        section == "[access.users]" && $0 ~ "^[[:space:]]*" name "[[:space:]]*=" { next }
+        { print }
+    ' "$CONFIG" > "$temp"; then
+        rm -f -- "$temp"
+        return 1
+    fi
+    cat "$temp" > "$CONFIG"
+    rm -f -- "$temp"
+    printf 'Access revoked for %s.\n' "$name"
+    printf 'Apply the configuration: docker compose up -d --force-recreate\n'
+}
+
+if [[ $# == 2 && $1 == --revoke ]]; then
+    action=revoke
+    name=$2
+elif [[ $# == 1 ]]; then
+    action=add
+    name=$1
+else
+    usage
+fi
+[[ $name =~ ^[A-Za-z0-9_-]+$ && ${#name} -le 64 ]] || usage
+
+if [[ $action == revoke ]]; then
+    revoke_user "$name"
+else
+    public_host=$(read_public_host)
+    initialize
+    add_user "$name" "$public_host"
+fi

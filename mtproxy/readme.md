@@ -22,7 +22,14 @@ bash user.sh bob
 docker compose up -d --force-recreate
 ```
 
-Send the generated link to the user. Recreating the container temporarily interrupts connections. To revoke access, remove the user's entry from `config/config.toml` and recreate the container using the same command.
+Send the generated link to the user. Run `bash user.sh bob` again to display an existing user's link. To revoke access:
+
+```bash
+bash user.sh --revoke bob
+docker compose up -d --force-recreate
+```
+
+Recreating the container temporarily interrupts connections. Revocation takes effect after the configuration is applied.
 
 The configuration in `config/` contains secrets, and the links grant access to the proxy. Do not publish them. The `config/` and `data/` directories and the `.env` file are ignored by Git. To preserve access when migrating to a new server, back up `config/` and restore `.env` with the user's UID and GID on the new server.
 
