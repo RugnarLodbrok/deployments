@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     user: "${TELEMT_UID:?Run user.sh first}:${TELEMT_GID:?Run user.sh first}"
     ports:
-      - "443:443"
+      - "${PORT:?Set PORT in .env}:443"
     working_dir: /data
     command: ["/etc/telemt/config.toml"]
     volumes:
