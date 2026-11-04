@@ -13,6 +13,8 @@ docker compose up -d
 
 The command creates the Telemt configuration and data directory; there is no need to run it again when restarting. The container runs with the UID and GID of the user who created the configuration, or `65532` for both if the command was run as root. Run Docker Compose from this directory as the same user.
 
+The command also creates `.env` with these IDs. See `.env.example` for its format.
+
 ## Add a user
 
 ```bash

@@ -10,7 +10,7 @@ readonly TLS_DOMAIN=github.com
 readonly PORT=443
 
 usage() {
-    printf 'Использование: bash user.sh <имя>\n' >&2
+    printf 'Usage: bash user.sh <name>\n' >&2
     exit 1
 }
 
@@ -20,17 +20,17 @@ read_public_host() {
     while IFS= read -r line || [[ -n $line ]]; do
         if [[ $line =~ $pattern ]]; then
             if [[ -n $host ]]; then
-                printf 'В %s указан более одного public_host.\n' "$SETTINGS" >&2
+                printf 'More than one public_host is set in %s.\n' "$SETTINGS" >&2
                 return 1
             fi
             host=${BASH_REMATCH[1]}
         elif [[ ! $line =~ $ignored ]]; then
-            printf 'Неверная строка в %s: %s\n' "$SETTINGS" "$line" >&2
+            printf 'Invalid line in %s: %s\n' "$SETTINGS" "$line" >&2
             return 1
         fi
     done < "$SETTINGS"
     if [[ -z $host || $host == 203.0.113.1 ]]; then
-        printf 'Укажите публичный адрес VPS в %s.\n' "$SETTINGS" >&2
+        printf 'Set the public VPS address in %s.\n' "$SETTINGS" >&2
         return 1
     fi
     printf '%s' "$host"
@@ -85,20 +85,20 @@ EOF
 add_user() {
     local name=$1 secret
     if grep -qE "^${name}[[:space:]]*=" "$CONFIG"; then
-        printf 'Пользователь %s уже существует.\n' "$name" >&2
+        printf 'User %s already exists.\n' "$name" >&2
         exit 1
     fi
     secret=$(openssl rand -hex 16)
     printf '%s = "%s"\n' "$name" "$secret" >> "$CONFIG"
     local domain_hex
     domain_hex=$(printf '%s' "$TLS_DOMAIN" | od -An -tx1 | tr -d ' \n')
-    printf 'Ссылка для %s:\ntg://proxy?server=%s&port=%s&secret=ee%s%s\n' "$name" "$2" "$PORT" "$secret" "$domain_hex"
+    printf 'Link for %s:\ntg://proxy?server=%s&port=%s&secret=ee%s%s\n' "$name" "$2" "$PORT" "$secret" "$domain_hex"
 }
 
 [[ $# == 1 ]] || usage
 [[ $1 =~ ^[A-Za-z0-9_-]+$ && ${#1} -le 64 ]] || usage
-command -v openssl >/dev/null || { printf 'Требуется openssl.\n' >&2; exit 1; }
+command -v openssl >/dev/null || { printf 'OpenSSL is required.\n' >&2; exit 1; }
 public_host=$(read_public_host)
 initialize
 add_user "$1" "$public_host"
-printf 'Примените настройки: docker compose up -d --force-recreate\n'
+printf 'Apply the configuration: docker compose up -d --force-recreate\n'
