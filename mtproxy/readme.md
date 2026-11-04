@@ -4,18 +4,19 @@ Telemt with Fake TLS and `github.com` as the masking domain. Requires Docker Com
 
 ## Start
 
-Copy `.env.example` to `.env` and set `PUBLIC_HOST` to the public IP or domain of the VPS. Set `PORT` to the external TCP port, which must be free and accessible from outside. Then create the first user and save the link printed by the command:
+Copy `.env.example` to `.env` and set `PUBLIC_HOST` to the public IP or domain of the VPS. Set `PORT` to the external TCP port, which must be free and accessible from outside. Initialize the container IDs, then create the first user and save the link printed by the command:
 
 ```bash
 cp .env.example .env
 # Edit .env before continuing.
+bash init-env.sh
 bash user.sh alice
 docker compose up -d
 ```
 
-The command creates the Telemt configuration and data directory; there is no need to run it again when restarting. The container runs with the UID and GID of the user who created the configuration, or `65532` for both if the command was run as root. Run Docker Compose from this directory as the same user.
+`init-env.sh` adds `TELEMT_UID` and `TELEMT_GID` to `.env` using the current user's UID and GID, or `65532` for both if run as root. Existing values are left unchanged. Run `init-env.sh` and `user.sh` as the same user.
 
-The command adds these IDs to `.env` on first initialization. Shell environment variables take precedence over values in `.env`.
+`user.sh` creates the Telemt configuration and data directory; there is no need to run it again when restarting. Run Docker Compose from this directory as the same user. Shell environment variables take precedence over values in `.env`.
 
 To change the port, update `PORT` in `.env`, open the new TCP port in the firewall, and run `docker compose up -d`. Run `bash user.sh <name>` to get each user's updated link. Existing links contain the old port and must be replaced.
 

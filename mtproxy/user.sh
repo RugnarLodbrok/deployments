@@ -59,9 +59,6 @@ initialize() {
         gid=65532
     fi
     mkdir -p config data
-    if ! grep -q '^TELEMT_UID=' "$SETTINGS" && ! grep -q '^TELEMT_GID=' "$SETTINGS"; then
-        printf '\nTELEMT_UID=%s\nTELEMT_GID=%s\n' "$uid" "$gid" >> "$SETTINGS"
-    fi
     if [[ ! -e $CONFIG ]]; then
         cat > "$CONFIG" <<EOF
 [general]

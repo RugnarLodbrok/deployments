@@ -3,7 +3,12 @@ services:
     image: ghcr.io/telemt/telemt:3.5.16
     container_name: telemt
     restart: unless-stopped
-    user: "${TELEMT_UID:?Run user.sh first}:${TELEMT_GID:?Run user.sh first}"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    user: "${TELEMT_UID:?Run init-env.sh first}:${TELEMT_GID:?Run init-env.sh first}"
     ports:
       - "${PORT:?Set PORT in .env}:443"
     working_dir: /data

@@ -2,6 +2,11 @@ services:
   datnte:
     image: davojan/dante-pam
     container_name: dante
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     ports:
       - "1080:1080"
     volumes:
