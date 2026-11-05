@@ -14,7 +14,8 @@ services:
     working_dir: /data
     command: ["/etc/telemt/config.toml"]
     volumes:
-      - ./config:/etc/telemt:ro
+      - ./config:/etc/telemt/users:ro
+      - ./config.toml:/etc/telemt/config.toml:ro
       - ./data:/data
     read_only: true
     cap_drop:

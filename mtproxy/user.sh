@@ -4,10 +4,10 @@ set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 umask 077
 
-readonly CONFIG=config/config.toml
+readonly CONFIG=config/users.toml
+readonly LEGACY_CONFIG=config/config.toml
 readonly SETTINGS=.env
 readonly TLS_DOMAIN=github.com
-readonly INTERNAL_PORT=443
 
 usage() {
     printf 'Usage: bash user.sh <name> | bash user.sh --revoke <name>\n' >&2
@@ -60,33 +60,11 @@ initialize() {
     fi
     mkdir -p config data
     if [[ ! -e $CONFIG ]]; then
-        cat > "$CONFIG" <<EOF
-[general]
-use_middle_proxy = true
-
-[general.modes]
-classic = false
-secure = false
-tls = true
-
-[general.links]
-show = "*"
-
-[server]
-port = $INTERNAL_PORT
-
-[server.api]
-enabled = false
-
-[censorship]
-tls_domain = "$TLS_DOMAIN"
-mask = true
-mask_host = "$TLS_DOMAIN"
-tls_emulation = true
-tls_front_dir = "/data/tlsfront"
-
-[access.users]
-EOF
+        if [[ -e $LEGACY_CONFIG ]]; then
+            printf 'Migrate users from %s to %s first; see readme.md.\n' "$LEGACY_CONFIG" "$CONFIG" >&2
+            return 1
+        fi
+        printf '[access.users]\n' > "$CONFIG"
     fi
     if [[ $(id -u) == 0 ]]; then
         chown "$uid:$gid" config data "$CONFIG"
@@ -110,7 +88,8 @@ read_secret() {
 show_link() {
     local name=$1 host=$2 port=$3 secret=$4 domain_hex
     domain_hex=$(printf '%s' "$TLS_DOMAIN" | od -An -tx1 | tr -d ' \n')
-    printf 'Link for %s:\ntg://proxy?server=%s&port=%s&secret=ee%s%s\n' "$name" "$host" "$port" "$secret" "$domain_hex"
+    printf 'Fake TLS link for %s:\ntg://proxy?server=%s&port=%s&secret=ee%s%s\n' "$name" "$host" "$port" "$secret" "$domain_hex"
+    printf 'Secure link for %s:\ntg://proxy?server=%s&port=%s&secret=dd%s\n' "$name" "$host" "$port" "$secret"
     printf 'To revoke access: bash user.sh --revoke %s\n' "$name"
 }
 
