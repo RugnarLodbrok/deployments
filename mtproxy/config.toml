@@ -1,0 +1,25 @@
+include = "users/users.toml"
+
+[general]
+use_middle_proxy = true
+
+[general.modes]
+classic = false
+secure = true
+tls = true
+
+[general.links]
+show = "*"
+
+[server]
+port = 443
+
+[server.api]
+enabled = false
+
+[censorship]
+tls_domain = "github.com"
+mask = true
+mask_host = "github.com"
+tls_emulation = true
+tls_front_dir = "/data/tlsfront"
