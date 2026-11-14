@@ -1,61 +1,94 @@
 # Telegram proxy
 
-Telemt with Fake TLS and secure (`dd`) modes on the same port, using `github.com` as the Fake TLS masking domain. Requires Docker Compose, OpenSSL, a public VPS address, and an open TCP port (443 by default).
+`Telemt` provides Fake TLS and secure (`dd`) connections on the same TCP port. This setup uses `github.com` for TLS masking.
 
-## Start
+## Requirements
 
-Copy `.env.example` to `.env` and set `PUBLIC_HOST` to the public IP or domain of the VPS. Set `PORT` to the external TCP port, which must be free and accessible from outside. Initialize the container IDs, then create the first user and save the link printed by the command:
+- A VPS with a public IPv4 address or domain.
+- Docker with Docker Compose, Bash and OpenSSL installed.
+- A free TCP port allowed by both the VPS firewall and the hosting provider's firewall. The default is `443`; use `8443` if `443` is already occupied.
+
+## Prepare a fresh installation
+
+Run from the repository's `mtproxy` directory on the VPS:
 
 ```bash
-cp .env.example .env
-# Edit .env before continuing.
-bash init-env.sh
-bash user.sh alice
-docker compose up -d
+cd ~/deployments/mtproxy
+bash setup.sh
 ```
 
-`init-env.sh` adds `TELEMT_UID` and `TELEMT_GID` to `.env` using the current user's UID and GID, or `65532` for both if run as root. Existing values are left unchanged. Run `init-env.sh` and `user.sh` as the same user.
+Enter the public VPS address and external TCP port when prompted. The script:
 
-`config.toml` contains the server settings and is mounted read-only. `user.sh` creates `config/users.toml` with the user secrets and the data directory; there is no need to run it again when restarting. Run Docker Compose from this directory as the same user. Shell environment variables take precedence over values in `.env`.
+1. Copies `.env.example` to `.env` and saves `PUBLIC_HOST` and `PORT`.
+2. Calls `init-env.sh` to initialize `TELEMT_UID` and `TELEMT_GID`. When run as root, the container IDs are `65532:65532`; otherwise, they match the current user's IDs.
+3. Creates `config/` and `data/`, then writes the required `[access.users]` header to `config/users.toml`, with no user entries.
+4. Sets ownership and permissions for the container to read its config and write runtime data.
 
-To change the port, update `PORT` in `.env`, open the new TCP port in the firewall, and run `docker compose up -d`. Run `bash user.sh <name>` to get each user's updated link. Existing links contain the old port and must be replaced.
+Setup is only for a fresh installation: it stops without changing files if `.env`, `config/` or `data/` already exists. It does not create users, start Docker, install dependencies or change firewalls. It can be invoked from another directory because it resolves its own location.
 
-## Upgrade an existing installation
+## Create the first user and start
 
-Keep the existing `.env` with its IDs. If it lacks `PUBLIC_HOST` or `PORT`, add them from `.env.example` and set `PUBLIC_HOST` to the address previously used in the configuration.
+Create a user separately, using the same account that ran setup:
 
-The old `config/config.toml` contains both settings and user secrets. Before recreating the container:
+```bash
+bash user.sh alice
+```
 
-1. Back up `config/config.toml` in a secure location.
-2. Copy the entire `[access.users]` section, including the header and every user secret, into `config/users.toml`. Restrict the new file's permissions to its owner and keep it readable by `TELEMT_UID`.
-3. Review the tracked `config.toml` and transfer any custom server settings from the old file. Keep `include = "users/users.toml"` and avoid adding secrets to it.
-4. Run `docker compose up -d --force-recreate` and verify that existing users can connect.
+Save the printed Fake TLS and secure links. Open the chosen TCP port in your firewalls, then start the proxy:
 
-The old `config/config.toml` is no longer used by the container. Preserve its backup until migration is verified.
+```bash
+docker compose up -d
+docker compose ps
+docker compose logs --tail=100 telemt
+```
 
-## Add a user
+Open the Fake TLS link on the phone and enable the proxy in Telegram. The secure link is an alternative for clients without Fake TLS support.
+
+## Files and secrets
+
+| File | Purpose | Git |
+| --- | --- | --- |
+| `.env.example` | Template for the public address and external port | Tracked |
+| `.env` | VPS address, external port and container IDs | Ignored |
+| `config.toml` | Server settings; includes `users/users.toml` | Tracked |
+| `config/users.toml` | User names and secrets | Ignored |
+| `data/` | Runtime data and caches | Ignored |
+
+Compose mounts `config.toml` at `/etc/telemt/config.toml` and `config/` at `/etc/telemt/users/`. The include therefore resolves to `/etc/telemt/users/users.toml` inside the container. The external `PORT` maps to container port `443`.
+
+`user.sh` adds entries under the `[access.users]` header prepared by setup. Do not remove that header or put real secrets into `.env.example`. Proxy links contain secrets, and logs can contain those links.
+
+## Add, display or revoke a user
+
+After initial setup, use the same account to manage users:
 
 ```bash
 bash user.sh bob
 docker compose up -d --force-recreate
 ```
 
-Send the appropriate generated link to the user. Both links use the same user secret and port; the secure link contains a `dd` secret for clients that do not support Fake TLS. Run `bash user.sh bob` again to display an existing user's links. To revoke access:
+Running `bash user.sh bob` again prints the existing user's links. To revoke access:
 
 ```bash
 bash user.sh --revoke bob
 docker compose up -d --force-recreate
 ```
 
-Recreating the container temporarily interrupts connections. Revocation takes effect after the configuration is applied.
+Recreating the container briefly interrupts connections.
 
-The files in `config/` contain secrets, and the links grant access to the proxy. Do not publish them. The `config/` and `data/` directories and the `.env` file are ignored by Git. To preserve access when migrating to a new server, back up `config/` and restore `.env`, updating the address, port, and user's UID and GID as needed.
+## Change the public address or port
 
-Check the status and logs:
+Edit `PUBLIC_HOST` or `PORT` in `.env`. Open the new TCP port if necessary, then apply the settings:
 
 ```bash
-docker compose ps
-docker compose logs --tail=100
+docker compose up -d --force-recreate
 ```
 
-The logs may also contain links and secrets. Proxy availability and masking depend on the client's network and should be tested from the user's device.
+Generate updated links for every user with `bash user.sh <name>` and replace their old links. Shell variables override `.env` in Compose and `user.sh`; unset stale `PUBLIC_HOST`, `PORT`, `TELEMT_UID` or `TELEMT_GID` exports before using those commands.
+
+## Troubleshooting
+
+- `Config error: No such file or directory`: verify that `config.toml` and `config/users.toml` exist and that Compose mounts match the paths described above. Run setup before starting a fresh installation.
+- `Unknown config key ignored ... key=<user name>`: the users file is missing `[access.users]`. Restore the header before user entries and recreate the container.
+- `Permission denied` for caches or runtime files: check that `data/` and its contents are writable by `TELEMT_UID` and `TELEMT_GID` from `.env`.
+- The container is `healthy`, but Telegram cannot connect: confirm the link uses the public VPS address and external `PORT`, confirm the user exists under `[access.users]`, and check firewall access from the client's network. Container health alone does not verify client authentication or external reachability.
