@@ -1,6 +1,8 @@
 services:
   3x-ui:
-    build: .
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
     image: local/3x-ui-https:3.11.0-acme3.1.6
     container_name: 3x-ui
     restart: unless-stopped
