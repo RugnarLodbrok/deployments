@@ -1,0 +1,5 @@
+*
+!Dockerfile
+!docker/
+!docker/https-entrypoint.sh
+!docker/reload-panel.sh
