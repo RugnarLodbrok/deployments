@@ -5,7 +5,8 @@ services:
     restart: unless-stopped
     network_mode: host
     environment:
-      XUI_ENABLE_FAIL2BAN: "false"
+      XUI_ENABLE_FAIL2BAN: "true"
+      XUI_PORT: "2053"
     volumes:
       - ./db:/etc/x-ui
       - ./cert:/root/cert
