@@ -1,0 +1,23 @@
+server {
+    listen 80;
+    server_name _;
+    autoindex off;
+    disable_symlinks on;
+    access_log off;
+
+    types { }
+    default_type application/octet-stream;
+    add_header Content-Disposition attachment;
+
+    location / {
+        return 404;
+    }
+
+    location /${SHARE_KEY}/ {
+        alias /srv/files/;
+    }
+
+    location ~ (^|/)\. {
+        return 404;
+    }
+}

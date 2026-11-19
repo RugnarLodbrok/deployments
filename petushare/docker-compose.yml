@@ -1,0 +1,13 @@
+services:
+  nginx:
+    image: nginx:stable-alpine
+    restart: unless-stopped
+    environment:
+      SHARE_KEY: "${SHARE_KEY:?Set SHARE_KEY in .env}"
+    ports:
+      - "${PORT:-8080}:80"
+    volumes:
+      - ./files:/srv/files:ro
+      - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+    logging:
+      driver: local
