@@ -1,0 +1,24 @@
+services:
+  syncthing:
+    image: syncthing/syncthing:latest
+    hostname: syncthing-nas
+    restart: unless-stopped
+    environment:
+      PUID: "${SYNCTHING_PUID:-1000}"
+      PGID: "${SYNCTHING_PGID:-1000}"
+    ports:
+      - "${SYNCTHING_GUI_BIND:-127.0.0.1}:8384:8384/tcp"
+      - "22000:22000/tcp"
+      - "22000:22000/udp"
+    volumes:
+      - syncthing-state:/var/syncthing
+      - type: bind
+        source: "${SYNCTHING_DATA_DIR:?Set SYNCTHING_DATA_DIR in .env}"
+        target: /var/syncthing/Sync
+        bind:
+          create_host_path: false
+    logging:
+      driver: local
+
+volumes:
+  syncthing-state:
