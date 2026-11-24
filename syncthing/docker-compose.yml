@@ -11,7 +11,11 @@ services:
       - "22000:22000/tcp"
       - "22000:22000/udp"
     volumes:
-      - syncthing-state:/var/syncthing
+      - type: bind
+        source: "${SYNCTHING_STATE_DIR:?Set SYNCTHING_STATE_DIR in .env}"
+        target: /var/syncthing
+        bind:
+          create_host_path: false
       - type: bind
         source: "${SYNCTHING_DATA_DIR:?Set SYNCTHING_DATA_DIR in .env}"
         target: /var/syncthing/Sync
@@ -19,6 +23,3 @@ services:
           create_host_path: false
     logging:
       driver: local
-
-volumes:
-  syncthing-state:
